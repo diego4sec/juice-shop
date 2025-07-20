@@ -1,0 +1,67 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/" # Location of package.json
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    # Allow both direct and indirect updates
+    allow:
+      - dependency-type: "all"
+    # Limit the number of open pull requests for npm updates
+    open-pull-requests-limit: 15
+    # Add reviewers and assignees for npm updates
+    # Group updates by dependency type
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      major-updates:
+        update-types:
+          - "major"
+    # Ignore specific dependencies that might cause issues
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "sequelize"
+        update-types: ["version-update:semver-major"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "juice-shop/maintainers"
+
+  # Enable version updates for Docker (if Dockerfile exists)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "juice-shop/maintainers"
