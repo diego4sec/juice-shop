@@ -1,67 +1,50 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+name: Dependency Updates
 
-version: 2
-updates:
-  # Enable version updates for npm
-  - package-ecosystem: "npm"
-    directory: "/" # Location of package.json
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
-    # Allow both direct and indirect updates
-    allow:
-      - dependency-type: "all"
-    # Limit the number of open pull requests for npm updates
-    open-pull-requests-limit: 15
-    # Add reviewers and assignees for npm updates
-    # Group updates by dependency type
-    groups:
-      production-dependencies:
-        dependency-type: "production"
-        update-types:
-          - "minor"
-          - "patch"
-      development-dependencies:
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
-      major-updates:
-        update-types:
-          - "major"
-    # Ignore specific dependencies that might cause issues
-    ignore:
-      # Ignore major version updates for critical dependencies
-      - dependency-name: "express"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "sequelize"
-        update-types: ["version-update:semver-major"]
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual triggering
 
-  # Enable version updates for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "juice-shop/maintainers"
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
-  # Enable version updates for Docker (if Dockerfile exists)
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
-    open-pull-requests-limit: 3
-    reviewers:
-      - "juice-shop/maintainers"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update dependencies
+        run: |
+          # Update all dependencies to latest versions
+          npx npm-check-updates -u
+          npm install
+
+      - name: Run tests
+        run: npm test
+        continue-on-error: true
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update npm dependencies'
+          title: 'chore: update npm dependencies'
+          body: |
+            This PR updates npm dependencies to their latest versions.
+            
+            Please review the changes and ensure all tests pass before merging.
+          branch: dependency-updates
+          delete-branch: true
