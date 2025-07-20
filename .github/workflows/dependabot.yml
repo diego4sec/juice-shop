@@ -21,19 +21,41 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Check for lock files and install dependencies
+        run: |
+          if [ -f "package-lock.json" ]; then
+            echo "Found package-lock.json, using npm ci"
+            npm ci
+          elif [ -f "yarn.lock" ]; then
+            echo "Found yarn.lock, using yarn install"
+            yarn install --frozen-lockfile
+          else
+            echo "No lock file found, using npm install"
+            npm install
+          fi
 
       - name: Update dependencies
         run: |
           # Update all dependencies to latest versions
           npx npm-check-updates -u
-          npm install
+          
+          # Install updated dependencies
+          if [ -f "yarn.lock" ]; then
+            echo "Using yarn to install updated dependencies"
+            yarn install
+          else
+            echo "Using npm to install updated dependencies"
+            npm install
+          fi
 
       - name: Run tests
-        run: npm test
+        run: |
+          if [ -f "yarn.lock" ]; then
+            yarn test
+          else
+            npm test
+          fi
         continue-on-error: true
 
       - name: Create Pull Request
